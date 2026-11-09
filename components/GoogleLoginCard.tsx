@@ -1,14 +1,13 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+
 export interface GoogleLoginCardProps {
-  /** Connect this to Auth.js, for example: () => signIn("google"). */
-  onGoogleSignIn: () => void | Promise<unknown>;
-  isLoading?: boolean;
+  redirectTo?: string;
 }
 
 export function GoogleLoginCard({
-  onGoogleSignIn,
-  isLoading = false,
+  redirectTo = "/dashboard",
 }: GoogleLoginCardProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f5f7] px-5 py-12 text-slate-900">
@@ -45,19 +44,11 @@ export function GoogleLoginCard({
 
         <button
           type="button"
-          onClick={() => void onGoogleSignIn()}
-          disabled={isLoading}
-          className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-wait disabled:opacity-65 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
+          onClick={() => void signIn("google", { redirectTo })}
+          className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20"
         >
-          {isLoading ? (
-            <span
-              aria-hidden="true"
-              className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700"
-            />
-          ) : (
-            <GoogleMark />
-          )}
-          <span>{isLoading ? "Connecting…" : "Continue with Google"}</span>
+          <GoogleMark />
+          <span>Continue with Google</span>
         </button>
 
         <div className="mt-7 flex items-center gap-3 text-xs leading-5 text-slate-400">
