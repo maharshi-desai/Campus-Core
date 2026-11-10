@@ -1,16 +1,4 @@
-import type {
-  CourseList,
-  HostelMetrics,
-  StudentProfile,
-} from "./campus-core-types";
-
-export interface StudentHubProps {
-  student: StudentProfile;
-  courses: CourseList;
-  hostel: HostelMetrics;
-}
-
-export function StudentHub({ student, courses, hostel }: StudentHubProps) {
+export function StudentHub({ student, courses, hostel }) {
   const gpaProgress = Math.min(100, Math.max(0, (student.gpa / student.gpaScale) * 100));
 
   return (
@@ -164,7 +152,7 @@ export function StudentHub({ student, courses, hostel }: StudentHubProps) {
   );
 }
 
-function AirQualityGauge({ metrics }: { metrics: HostelMetrics }) {
+function AirQualityGauge({ metrics }) {
   const max = metrics.airQualityMax ?? 500;
   const value = Math.min(max, Math.max(0, metrics.airQualityIndex));
   const progress = max > 0 ? value / max : 0;
@@ -204,11 +192,11 @@ function AirQualityGauge({ metrics }: { metrics: HostelMetrics }) {
   );
 }
 
-function getFirstName(name: string) {
+function getFirstName(name) {
   return name.trim().split(/\s+/)[0] || "there";
 }
 
-function getInitials(name: string) {
+function getInitials(name) {
   return name
     .trim()
     .split(/\s+/)

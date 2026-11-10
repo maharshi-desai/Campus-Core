@@ -2,13 +2,7 @@
 
 import { signIn } from "next-auth/react";
 
-export interface GoogleLoginCardProps {
-  redirectTo?: string;
-}
-
-export function GoogleLoginCard({
-  redirectTo = "/dashboard",
-}: GoogleLoginCardProps) {
+export function GoogleLoginCard({ redirectTo = "/dashboard" }) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f5f7] px-5 py-12 text-slate-900">
       <div
