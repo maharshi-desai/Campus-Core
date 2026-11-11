@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate && find generated/prisma -type f -name '*.ts' -delete",
     "db:seed": "prisma db seed"
   },
   "devDependencies": {
