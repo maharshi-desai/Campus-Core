@@ -18,7 +18,14 @@ export default async function DashboardPage() {
 
   return (
     <StudentHub
-      student={{ ...demoStudent, name: session.user.name ?? demoStudent.name }}
+      student={{
+        ...demoStudent,
+        name:
+          session.user.name ||
+          session.user.email?.split("@")[0] ||
+          demoStudent.name,
+        email: session.user.email || "Email unavailable",
+      }}
       courses={demoCourses}
       hostel={demoHostel}
     />
