@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../auth";
+import { auth } from "../../auth.js";
+import { getAllCourses } from "../actions/enrollment.js";
 import { CourseRegistrationCatalog } from "../../components/CourseRegistrationCatalog";
-import { demoCatalogCourses } from "../../components/campus-core-demo-data";
 
 export default async function RegisterPage() {
   const session = await auth();
@@ -10,5 +10,7 @@ export default async function RegisterPage() {
     redirect("/login");
   }
 
-  return <CourseRegistrationCatalog courses={demoCatalogCourses} />;
+  const courses = await getAllCourses();
+
+  return <CourseRegistrationCatalog courses={courses} />;
 }
