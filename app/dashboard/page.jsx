@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../auth";
+import { auth } from "../../auth.js";
+import { getHostelMetrics } from "../actions/hostel.js";
 import { StudentHub } from "../../components/StudentHub";
-import {
-  demoCourses,
-  demoHostel,
-  demoStudent,
-} from "../../components/campus-core-demo-data";
+import { demoCourses, demoStudent } from "../../components/campus-core-demo-data";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -15,6 +12,8 @@ export default async function DashboardPage() {
   if (!session?.user) {
     redirect("/login");
   }
+
+  const hostel = await getHostelMetrics();
 
   return (
     <StudentHub
@@ -27,7 +26,7 @@ export default async function DashboardPage() {
         email: session.user.email || "Email unavailable",
       }}
       courses={demoCourses}
-      hostel={demoHostel}
+      hostel={hostel}
     />
   );
 }

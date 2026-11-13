@@ -123,27 +123,39 @@ export function StudentHub({ student, courses, hostel }) {
                 <div>
                   <p className="text-sm font-medium text-slate-500">Housing &amp; environment</p>
                   <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
-                    {hostel.blockName}
+                    {hostel?.blockName || "No hostel assigned"}
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500">Your hostel block</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {hostel ? "Your assigned hostel block" : "Housing details are not available"}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-8 sm:gap-12">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-400">
-                    Room capacity
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                    {hostel.roomCapacity}
-                    <span className="ml-1.5 text-sm font-medium text-slate-500">
-                      {hostel.roomCapacity === 1 ? "student" : "students"}
-                    </span>
-                  </p>
+              {hostel ? (
+                <div className="flex flex-wrap items-center gap-8 sm:gap-12">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-400">
+                      Block occupancy
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                      {hostel.currentOccupancy}
+                      <span className="ml-1 text-sm font-medium text-slate-400">/</span>
+                      <span className="ml-1.5 text-sm font-medium text-slate-500">
+                        {hostel.totalCapacity} residents
+                      </span>
+                    </p>
+                    <p className="mt-1 max-w-56 text-xs text-slate-400">
+                      Room assignment details are not in the current student profile.
+                    </p>
+                  </div>
+                  <div className="h-10 w-px bg-slate-100" />
+                  <AirQualityGauge metrics={hostel} />
                 </div>
-                <div className="h-10 w-px bg-slate-100" />
-                <AirQualityGauge metrics={hostel} />
-              </div>
+              ) : (
+                <p className="max-w-sm text-sm leading-6 text-slate-500">
+                  No hostel block is assigned to this student profile yet.
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -154,43 +166,72 @@ export function StudentHub({ student, courses, hostel }) {
 }
 
 function AirQualityGauge({ metrics }) {
-  const max = metrics.airQualityMax ?? 500;
-  const value = Math.min(max, Math.max(0, metrics.airQualityIndex));
-  const progress = max > 0 ? value / max : 0;
+  const max = 500;
+  const score = metrics.airQualityScore;
+  const hasScore = typeof score === "number" && Number.isFinite(score);
+  const value = hasScore ? Math.min(max, Math.max(0, score)) : 0;
+  const progress = value / max;
   const circumference = 2 * Math.PI * 19;
+  const category = hasScore ? getAirQualityCategory(value) : null;
 
   return (
     <div className="flex items-center gap-3" aria-label="Hostel air quality">
-      <div className="relative h-[68px] w-[68px] shrink-0">
-        <svg viewBox="0 0 48 48" className="h-full w-full -rotate-90" role="img" aria-label={`Air quality index ${metrics.airQualityIndex}`}>
-          <circle cx="24" cy="24" r="19" fill="none" stroke="#e8edf3" strokeWidth="4" />
-          <circle
-            cx="24"
-            cy="24"
-            r="19"
-            fill="none"
-            stroke="#14b8a6"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={`${circumference * progress} ${circumference}`}
-            className="transition-[stroke-dasharray] duration-700 ease-out"
-          />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-base font-semibold tracking-tight text-slate-900">
-          {metrics.airQualityIndex}
-        </span>
-      </div>
+      {hasScore ? (
+        <div className="relative h-[68px] w-[68px] shrink-0">
+          <svg
+            viewBox="0 0 48 48"
+            className="h-full w-full -rotate-90"
+            role="img"
+            aria-label={`Air quality index ${Math.round(score)}, ${category.label}`}
+          >
+            <circle cx="24" cy="24" r="19" fill="none" stroke="#e8edf3" strokeWidth="4" />
+            <circle
+              cx="24"
+              cy="24"
+              r="19"
+              fill="none"
+              stroke={category.color}
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={`${circumference * progress} ${circumference}`}
+              className="transition-[stroke-dasharray] duration-700 ease-out"
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-base font-semibold tracking-tight text-slate-900">
+            {Math.round(score)}
+          </span>
+        </div>
+      ) : (
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-400">
+          N/A
+        </div>
+      )}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-400">
-          Air quality
+          Air quality index
         </p>
-        <p className="mt-1 text-sm font-semibold text-slate-800">AQI</p>
-        {metrics.airQualityLabel && (
-          <p className="mt-0.5 text-xs text-teal-700">{metrics.airQualityLabel}</p>
+        <p className="mt-1 text-sm font-semibold text-slate-800">{hasScore ? Math.round(score) : "Unavailable"}</p>
+        {category && (
+          <p className={`mt-0.5 text-xs font-medium ${category.textClass}`}>{category.label}</p>
         )}
       </div>
     </div>
   );
+}
+
+function getAirQualityCategory(score) {
+  if (score <= 50) return { label: "Good", color: "#16a34a", textClass: "text-green-700" };
+  if (score <= 100) return { label: "Moderate", color: "#ca8a04", textClass: "text-yellow-700" };
+  if (score <= 150) {
+    return {
+      label: "Sensitive groups",
+      color: "#ea580c",
+      textClass: "text-orange-700",
+    };
+  }
+  if (score <= 200) return { label: "Unhealthy", color: "#dc2626", textClass: "text-red-700" };
+  if (score <= 300) return { label: "Very unhealthy", color: "#9333ea", textClass: "text-purple-700" };
+  return { label: "Hazardous", color: "#7f1d1d", textClass: "text-red-900" };
 }
 
 function getFirstName(name) {
