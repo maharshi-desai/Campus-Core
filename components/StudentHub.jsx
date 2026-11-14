@@ -39,6 +39,15 @@ export function StudentHub({ student, courses, hostel }) {
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">{student.major}</p>
                 <p className="mt-1 text-sm text-slate-400">{student.email}</p>
+                {student.studentNumber ? (
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    Student ID {student.studentNumber}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Student profile not linked yet
+                  </p>
+                )}
               </div>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                 <AcademicIcon />
