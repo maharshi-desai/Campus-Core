@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "dotenv": "^18.0.10",
-    "prisma": "^7.10.1"
+    "prisma": "^7.10.1",
+    "prisma-erd-generator": "^3.2.1"
   },
   "overrides": {
     "postcss": "8.5.32"

@@ -131,8 +131,8 @@ model Course {
   department  Department   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   enrollments Enrollment[]
 
+  // The leading departmentId column also supports department foreign-key lookups.
   @@unique([departmentId, code])
-  @@index([departmentId])
   @@map("courses")
 }
 
@@ -149,4 +149,11 @@ model Enrollment {
   @@id([studentId, courseId])
   @@index([courseId])
   @@map("enrollments")
+}
+
+generator erd {
+  provider     = "prisma-erd-generator"
+  output       = "../docs/CampusCore-ERD.md"
+  showIndexes  = true
+  disableEmoji = true
 }
