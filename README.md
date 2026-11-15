@@ -2,6 +2,8 @@
 
 CampusCore is a full-stack university portal for student academics, course registration, and campus housing. Students sign in with Google, view their linked academic and housing information, and browse or enroll in courses from a responsive dashboard.
 
+The application is a Next.js full-stack app: its Auth.js route handlers and Server Actions are deployed with the UI on Vercel. Render is used for PostgreSQL; this repository does not have a separate API server to deploy there.
+
 ## Features
 
 - Google OAuth sign-in with Auth.js v5.
@@ -33,7 +35,7 @@ This keeps department, course, and housing facts out of dependent rows, reducing
 
 ## Requirements
 
-- Node.js 20.19+, 22.12+, or 24+
+- Node.js 24 or later
 - npm
 - A running PostgreSQL database
 - A Google OAuth client ID and client secret
@@ -121,10 +123,68 @@ Provide the Google account email, student ID, and a seeded department code (`CSE
 npm run dev            # Start the local development server
 npm run build          # Create a production build
 npm run start          # Serve the production build
+npm run db:client      # Generate the Prisma Client used during every production build
 npm run db:generate    # Generate Prisma Client and update the ERD
 npx prisma db push     # Sync the schema to the configured database
 node prisma/seed.js    # Seed sample catalog and housing data
 npm run db:link-student # Link a Google account to a student profile
 ```
 
-For production, configure the same database and Auth.js secrets in the hosting provider, add the production Google callback URL (`https://YOUR_DOMAIN/api/auth/callback/google`), and apply the Prisma schema to the production database before seeding or starting the app.
+## Deploy the app on Vercel with Render PostgreSQL
+
+This repository has no separate Express/API service. Deploy the entire Next.js app to Vercel; its Auth.js API route and Server Actions run as part of that deployment. Use Render to host PostgreSQL.
+
+### 1. Create the Render database
+
+In the [Render Dashboard](https://dashboard.render.com/), create a PostgreSQL database and choose the region and plan you want. Review the plan's price, storage, backups, and expiration terms before creating it. After it is ready, open the database's **Connect** details and copy its **External Database URL** for Vercel. Vercel cannot use Render's private internal URL. The external URL must use TLS (`sslmode=require`). Keep the URL private.
+
+### 2. Create the Vercel project
+
+In the [Vercel Dashboard](https://vercel.com/new), import `maharshi-desai/Campus-Core` from GitHub and select the `main` branch. Use the repository root as the project root, the Next.js framework preset, and Node.js 24.x. The build command is `npm run build`; it generates the ignored Prisma Client before compiling Next.js. Vercel can then deploy future pushes to `main` automatically.
+
+### 3. Add Vercel environment variables
+
+In **Project Settings → Environment Variables**, add these variables for **Production** (and Preview only if you also configure Google OAuth for preview domains):
+
+| Name | Value |
+| --- | --- |
+| `DATABASE_URL` | Render's External Database URL, including `sslmode=require` |
+| `AUTH_SECRET` | A newly generated secret (do not reuse the local development secret) |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
+
+Vercel is detected by Auth.js as a trusted host. The variable values are encrypted in Vercel; do not place secrets in Git or share them in chat.
+
+### 4. Configure Google OAuth for production
+
+In Google Cloud Console, add the production domain as an authorized JavaScript origin and add this exact redirect URI:
+
+```text
+https://YOUR-VERCEL-DOMAIN.vercel.app/api/auth/callback/google
+```
+
+Replace `YOUR-VERCEL-DOMAIN` with the domain assigned to the Vercel project. If you later add a custom domain, add its origin and callback URI too. Save the environment variables and Google settings, then redeploy so the deployment receives the values.
+
+### 5. Create the production schema and seed it
+
+Use the Render external URL only as the database target. From a terminal with this repository checked out, create an ignored temporary env file named `.env.render` containing only:
+
+```dotenv
+DATABASE_URL="paste-the-render-external-database-url-here"
+```
+
+Then run:
+
+```bash
+DOTENV_CONFIG_PATH=.env.render npx prisma db push
+DOTENV_CONFIG_PATH=.env.render node prisma/seed.js
+rm .env.render
+```
+
+These commands create the tables and sample departments, courses, hostels, and rooms in the Render database. `.env.render` is ignored by Git. Do not point them at a database containing important data unless you have reviewed the schema changes and have a backup. Never commit or share the Render URL.
+
+### 6. Verify the deployment
+
+Open the Vercel production URL, complete Google sign-in, and confirm `/dashboard` and `/register` load. The first Google sign-in creates an Auth.js user. To enable student-specific data and enrollments, link that user to a seeded student profile with `npm run db:link-student` while `DATABASE_URL` points to the Render database.
+
+Vercel environment variable changes apply to new deployments, so redeploy after changing them. For Render connections, use the external URL from outside Render and keep TLS enabled. See the [Render PostgreSQL connection guide](https://render.com/docs/postgresql-creating-connecting) and [Vercel environment variable guide](https://vercel.com/docs/environment-variables/managing-environment-variables).
