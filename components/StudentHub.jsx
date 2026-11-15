@@ -135,7 +135,7 @@ export function StudentHub({ student, courses, hostel }) {
                     {hostel?.blockName || "No hostel assigned"}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    {hostel ? "Your assigned hostel block" : "Housing details are not available"}
+                    {hostel ? `Room ${hostel.roomNumber} · your assigned block` : "Housing details are not available"}
                   </p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export function StudentHub({ student, courses, hostel }) {
                       </span>
                     </p>
                     <p className="mt-1 max-w-56 text-xs text-slate-400">
-                      Room assignment details are not in the current student profile.
+                      Room occupancy {hostel.roomOccupancy}/{hostel.roomCapacity} beds
                     </p>
                   </div>
                   <div className="h-10 w-px bg-slate-100" />

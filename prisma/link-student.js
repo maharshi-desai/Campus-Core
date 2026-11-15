@@ -25,6 +25,9 @@ try {
   const hostelCode = (await prompt.question("Hostel code (optional, press Enter to skip): "))
     .trim()
     .toUpperCase();
+  const roomNumber = hostelCode
+    ? (await prompt.question("Room number in the selected hostel: ")).trim().toUpperCase()
+    : "";
 
   if (!email || !studentNumber || !departmentCode) {
     throw new Error("Google email, student ID, and department code are required.");
@@ -71,29 +74,72 @@ try {
   }
 
   let hostel = null;
+  let room = null;
   if (hostelCode) {
     hostel = await prisma.hostel.findUnique({
       where: { code: hostelCode },
-      select: { id: true },
+      select: { id: true, capacity: true, name: true },
     });
 
     if (!hostel) {
       throw new Error(`Hostel ${hostelCode} was not found. Check the seeded hostel codes.`);
     }
+
+    room = await prisma.hostelRoom.findUnique({
+      where: {
+        hostelId_roomNumber: {
+          hostelId: hostel.id,
+          roomNumber,
+        },
+      },
+      select: { id: true, capacity: true, roomNumber: true },
+    });
+
+    if (!room) {
+      throw new Error(`Room ${roomNumber} was not found in ${hostel.name}.`);
+    }
+
   }
 
-  await prisma.student.create({
-    data: {
-      userId: googleUser.id,
-      studentNumber,
-      departmentId: department.id,
-      hostelId: hostel?.id ?? null,
-    },
-  });
+  await prisma.$transaction(
+    async (transaction) => {
+      if (room && hostel) {
+        const [roomOccupancy, hostelOccupancy] = await Promise.all([
+          transaction.student.count({ where: { roomId: room.id } }),
+          transaction.student.count({ where: { room: { is: { hostelId: hostel.id } } } }),
+        ]);
 
-  console.log(`Linked student ${studentNumber} to Google account ${googleUser.email}.`);
+        if (roomOccupancy >= room.capacity) {
+          throw new Error(`Room ${roomNumber} is full (${room.capacity} residents).`);
+        }
+
+        if (hostelOccupancy >= hostel.capacity) {
+          throw new Error(`${hostel.name} is at full capacity.`);
+        }
+      }
+
+      return transaction.student.create({
+        data: {
+          userId: googleUser.id,
+          studentNumber,
+          departmentId: department.id,
+          roomId: room?.id ?? null,
+        },
+      });
+    },
+    { isolationLevel: "Serializable" },
+  );
+
+  const assignment = room ? ` and assigned ${hostel.name}, room ${room.roomNumber}` : "";
+  console.log(`Linked student ${studentNumber} to Google account ${googleUser.email}${assignment}.`);
 } catch (error) {
-  console.error(error instanceof Error ? error.message : "Could not link the student profile.");
+  const message =
+    error?.code === "P2034"
+      ? "Room availability changed during linking. Run the command again and choose another room."
+      : error instanceof Error
+        ? error.message
+        : "Could not link the student profile.";
+  console.error(message);
   process.exitCode = 1;
 } finally {
   prompt.close();

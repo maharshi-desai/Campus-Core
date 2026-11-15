@@ -40,28 +40,45 @@ export async function getHostelMetrics() {
 
   const student = await prisma.student.findUnique({
     where: { userId },
-    include: {
-      hostel: {
+    select: {
+      room: {
         select: {
-          name: true,
+          id: true,
+          roomNumber: true,
           capacity: true,
-          air_quality_score: true,
-          _count: {
-            select: { students: true },
+          hostel: {
+            select: {
+              id: true,
+              name: true,
+              capacity: true,
+              air_quality_score: true,
+              rooms: { select: { id: true } },
+            },
           },
         },
       },
     },
   });
 
-  if (!student?.hostel) {
+  if (!student?.room?.hostel) {
     return null;
   }
 
+  const { room } = student;
+  const hostel = room.hostel;
+  const roomIds = hostel.rooms.map(({ id }) => id);
+  const [currentOccupancy, roomOccupancy] = await Promise.all([
+    prisma.student.count({ where: { roomId: { in: roomIds } } }),
+    prisma.student.count({ where: { roomId: room.id } }),
+  ]);
+
   return {
-    blockName: student.hostel.name,
-    totalCapacity: student.hostel.capacity,
-    currentOccupancy: student.hostel._count.students,
-    airQualityScore: student.hostel.air_quality_score,
+    blockName: hostel.name,
+    totalCapacity: hostel.capacity,
+    currentOccupancy,
+    roomNumber: room.roomNumber,
+    roomCapacity: room.capacity,
+    roomOccupancy,
+    airQualityScore: hostel.air_quality_score,
   };
 }

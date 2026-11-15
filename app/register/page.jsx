@@ -10,7 +10,12 @@ export default async function RegisterPage() {
     redirect("/login");
   }
 
-  const courses = await getAllCourses();
+  const { courses, hasStudentProfile } = await getAllCourses();
 
-  return <CourseRegistrationCatalog courses={courses} />;
+  return (
+    <CourseRegistrationCatalog
+      courses={courses}
+      hasStudentProfile={hasStudentProfile}
+    />
+  );
 }

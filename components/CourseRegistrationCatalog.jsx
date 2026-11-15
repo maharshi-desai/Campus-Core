@@ -3,13 +3,18 @@
 import { useState } from "react";
 import { enrollInCourse } from "../app/actions/enrollment.js";
 
-export function CourseRegistrationCatalog({ courses }) {
+export function CourseRegistrationCatalog({ courses, hasStudentProfile }) {
   const departments = Array.from(
     new Map(courses.map((course) => [course.department.id, course.department])).values(),
   );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("all");
   const [pendingCourseId, setPendingCourseId] = useState(null);
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState(() => new Set());
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState(
+    () => new Set(courses.filter((course) => course.isEnrolled).map((course) => course.id)),
+  );
+  const [remainingSeats, setRemainingSeats] = useState(
+    () => Object.fromEntries(courses.map((course) => [course.id, course.seatsRemaining])),
+  );
   const [feedback, setFeedback] = useState(null);
   const visibleCourses =
     selectedDepartmentId === "all"
@@ -25,6 +30,11 @@ export function CourseRegistrationCatalog({ courses }) {
 
       if (result.success) {
         setEnrolledCourseIds((currentIds) => new Set([...currentIds, course.id]));
+        setRemainingSeats((current) => ({ ...current, [course.id]: result.seatsRemaining }));
+      } else if (result.code === "ALREADY_ENROLLED") {
+        setEnrolledCourseIds((currentIds) => new Set([...currentIds, course.id]));
+      } else if (result.code === "COURSE_FULL") {
+        setRemainingSeats((current) => ({ ...current, [course.id]: 0 }));
       }
 
       setFeedback({
@@ -93,6 +103,16 @@ export function CourseRegistrationCatalog({ courses }) {
           </div>
         </section>
 
+        {!hasStudentProfile && (
+          <p
+            role="alert"
+            className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          >
+            Your Google account is not linked to a student profile yet. Ask the portal
+            administrator to link your student ID before enrolling.
+          </p>
+        )}
+
         {feedback && (
           <p
             role={feedback.type === "error" ? "alert" : "status"}
@@ -123,10 +143,18 @@ export function CourseRegistrationCatalog({ courses }) {
                 <p className="mt-2 text-sm text-slate-500">
                   {course.department.name} · {course.credits} credits
                 </p>
+                <p className="mt-3 text-xs font-medium text-slate-400">
+                  {remainingSeats[course.id] ?? 0} of {course.seatCapacity} seats available
+                </p>
               </div>
               <button
                 type="button"
-                disabled={pendingCourseId !== null || enrolledCourseIds.has(course.id)}
+                disabled={
+                  !hasStudentProfile ||
+                  pendingCourseId !== null ||
+                  enrolledCourseIds.has(course.id) ||
+                  (remainingSeats[course.id] ?? 0) === 0
+                }
                 onClick={() => handleEnroll(course)}
                 aria-label={`Enroll in ${course.code} ${course.title}`}
                 className="mt-5 min-h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/15 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
@@ -135,7 +163,11 @@ export function CourseRegistrationCatalog({ courses }) {
                   ? "Enrolling…"
                   : enrolledCourseIds.has(course.id)
                     ? "Enrolled"
-                    : "Enroll"}
+                    : !hasStudentProfile
+                      ? "Student profile required"
+                      : (remainingSeats[course.id] ?? 0) === 0
+                        ? "Class full"
+                        : "Enroll"}
               </button>
             </article>
           ))}
