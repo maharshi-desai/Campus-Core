@@ -1,10 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 
 export function GoogleLoginCard({ redirectTo = "/dashboard" }) {
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function handleSignIn() {
+    setIsSigningIn(true);
+    setErrorMessage("");
+
+    try {
+      await signIn("google", { redirectTo });
+    } catch {
+      setErrorMessage("Google sign-in could not start. Please try again.");
+      setIsSigningIn(false);
+    }
+  }
+
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f5f7] px-5 py-12 text-slate-900">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f5f7] px-4 py-8 text-slate-900 sm:px-5 sm:py-12">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -left-32 -top-40 h-96 w-96 rounded-full bg-blue-200/35 blur-3xl"
@@ -14,7 +30,7 @@ export function GoogleLoginCard({ redirectTo = "/dashboard" }) {
         className="pointer-events-none absolute -bottom-48 -right-24 h-[28rem] w-[28rem] rounded-full bg-violet-200/30 blur-3xl"
       />
 
-      <section className="relative w-full max-w-[420px] rounded-[30px] border border-white/80 bg-white/90 p-8 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.24)] backdrop-blur sm:p-10">
+      <section className="relative w-full max-w-[420px] rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.24)] backdrop-blur sm:p-10">
         <div className="mb-10 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold tracking-tight text-white shadow-sm">
             CC
@@ -38,12 +54,22 @@ export function GoogleLoginCard({ redirectTo = "/dashboard" }) {
 
         <button
           type="button"
-          onClick={() => void signIn("google", { redirectTo })}
-          className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20"
+          onClick={handleSignIn}
+          disabled={isSigningIn}
+          className="group flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-wait disabled:opacity-70 sm:px-5"
         >
           <GoogleMark />
-          <span>Continue with Google</span>
+          <span>{isSigningIn ? "Connecting to Google…" : "Continue with Google"}</span>
         </button>
+
+        {errorMessage && (
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          >
+            {errorMessage}
+          </p>
+        )}
 
         <div className="mt-7 flex items-center gap-3 text-xs leading-5 text-slate-400">
           <span className="h-px flex-1 bg-slate-100" />

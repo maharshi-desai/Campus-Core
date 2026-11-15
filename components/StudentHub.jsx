@@ -32,13 +32,13 @@ export function StudentHub({ student, courses, hostel }) {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
           <section className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_-24px_rgba(15,23,42,0.25)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_-28px_rgba(15,23,42,0.28)] sm:p-7 lg:col-span-5">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-500">Academic standing</p>
-                <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950">
+                <h2 className="mt-4 break-words text-xl font-semibold tracking-tight text-slate-950">
                   {student.name}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">{student.major}</p>
-                <p className="mt-1 text-sm text-slate-400">{student.email}</p>
+                <p className="mt-1 break-words text-sm text-slate-500">{student.major}</p>
+                <p className="mt-1 break-all text-sm text-slate-400">{student.email}</p>
                 {student.studentNumber ? (
                   <p className="mt-1 text-xs font-medium text-slate-500">
                     Student ID {student.studentNumber}
@@ -129,9 +129,9 @@ export function StudentHub({ student, courses, hostel }) {
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
                   <HomeIcon />
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-500">Housing &amp; environment</p>
-                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+                  <h2 className="mt-1 break-words text-xl font-semibold tracking-tight text-slate-950">
                     {hostel?.blockName || "No hostel assigned"}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
@@ -141,7 +141,7 @@ export function StudentHub({ student, courses, hostel }) {
               </div>
 
               {hostel ? (
-                <div className="flex flex-wrap items-center gap-8 sm:gap-12">
+                <div className="flex flex-col items-start gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-8 lg:gap-12">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-slate-400">
                       Block occupancy
@@ -157,7 +157,7 @@ export function StudentHub({ student, courses, hostel }) {
                       Room occupancy {hostel.roomOccupancy}/{hostel.roomCapacity} beds
                     </p>
                   </div>
-                  <div className="h-10 w-px bg-slate-100" />
+                  <div className="hidden h-10 w-px bg-slate-100 sm:block" />
                   <AirQualityGauge metrics={hostel} />
                 </div>
               ) : (
